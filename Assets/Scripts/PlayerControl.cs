@@ -1,6 +1,6 @@
 using System;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 public class PlayerControl : MonoBehaviour
 {
     //Config
@@ -16,7 +16,6 @@ public class PlayerControl : MonoBehaviour
     //Inputs
     private float _horizontalInput;
     [NonSerialized] public float beamInput;
-    [NonSerialized] public float changeBeamInput;
     private float _jumpInput;
     
     
@@ -31,6 +30,15 @@ public class PlayerControl : MonoBehaviour
     }
     void Update()
     {
+        Vector3 pos = transform.position;
+        Camera.main.transform.position = new Vector3(pos.x,pos.y,-10);
+        
+        //RESTART
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            SceneManager.LoadScene("SampleLevel");
+        }
+        
         GetInputs();
         Jump();
         Move();
@@ -42,7 +50,6 @@ public class PlayerControl : MonoBehaviour
     {
         _horizontalInput = Input.GetAxis("Horizontal");
         beamInput = Input.GetAxis("Fire1");
-        changeBeamInput = Input.GetAxis("Mouse ScrollWheel");
         _jumpInput = Input.GetAxis("Jump");
         
         _animator.SetFloat("horizontal",Mathf.Abs(_horizontalInput));

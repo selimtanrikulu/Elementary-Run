@@ -500,6 +500,8 @@ MonoBehaviour:
   imaginaryPrefab: {fileID: 8135526083252471008, guid: ebaadf7d515d4b94dba595263ffe607a, type: 3}
   preImaginaryPrefab: {fileID: 8135526083252471008, guid: 3464c769dfe958d439c9a2139f9a8a4a, type: 3}
   frozenPrefab: {fileID: 8135526083252471008, guid: dbdd34e36deb7e1488be37bb143b78e6, type: 3}
+  mirrorPrefab: {fileID: 8135526083252471008, guid: b4ea1471a88689d48bc2071797682ac2, type: 3}
+  magmaPrefab: {fileID: 8135526083252471008, guid: 9aa6080df8d97cf42bc0e5155d6fe3fd, type: 3}
 --- !u!1001 &704903527
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -761,7 +763,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 6
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1621,7 +1623,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8135526083252471020, guid: ecfb275093aa892459ab202c1fd93dfb, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8135526083252471020, guid: ecfb275093aa892459ab202c1fd93dfb, type: 3}
       propertyPath: m_LocalPosition.y

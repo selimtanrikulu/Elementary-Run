@@ -8,7 +8,9 @@ public enum BlockType
     Ghost,
     Imaginary,
     PreImaginary,
-    Frozen
+    Frozen,
+    Mirror,
+    Magma
 }
 
 
@@ -22,6 +24,8 @@ public class BlockController : MonoBehaviour
     [SerializeField] private GameObject imaginaryPrefab;
     [SerializeField] private GameObject preImaginaryPrefab;
     [SerializeField] private GameObject frozenPrefab;
+    [SerializeField] private GameObject mirrorPrefab;
+    [SerializeField] private GameObject magmaPrefab;
     
     
     private Portal _portal1;
@@ -31,41 +35,44 @@ public class BlockController : MonoBehaviour
     private Imaginary _imaginary;
     private PreImaginary _preImaginary;
     private Frozen _frozen;
+    private Mirror _mirror;
+    private Magma _magma;
     
-    public void OnBlockFilled(Block block,BeamType beamType)
+    public void CreateBlockByBeamType(BeamType beamType, Vector3 position)
     {
-        Vector3 position = block.transform.position;
-        
+
         switch (beamType)
         {
             case BeamType.Void:
-                block.Destroy();
                 CreatePortal(position);
                 break;
             
             case BeamType.Creativity:
-                block.Destroy();
                 CreateDefault(position);
                 break;
             
             case BeamType.Nature:
-                block.Destroy();
                 CreateTrampoline(position);
                 break;
             
             case BeamType.Soul:
-                block.Destroy();
                 CreateGhost(position);
                 break;
             
             case BeamType.Agony:
-                block.Destroy();
                 CreateImaginary(position);
                 break;
             
             case BeamType.Frost:
-                block.Destroy();
                 CreateFrozen(position);
+                break;
+            
+            case BeamType.Lighting:
+                CreateMirror(position);
+                break;
+            
+            case BeamType.Fire:
+                CreateMagma(position);
                 break;
         }
     }
@@ -77,20 +84,26 @@ public class BlockController : MonoBehaviour
 
     private void CreateFrozen(Vector3 position)
     {
-        if(_frozen != null) ResetBlock(_frozen);
+        if(_frozen != null) _frozen.Destroy();
         _frozen = InstantiateBlock(BlockType.Frozen,position).GetComponent<Frozen>();
     }
 
     private void CreateTrampoline(Vector3 position)
     {
-        if(_trampoline != null) ResetBlock(_trampoline);
+        if(_trampoline != null) _trampoline.Destroy();
         _trampoline = InstantiateBlock(BlockType.Trampoline,position).GetComponent<Trampoline>();
     }
 
     private void CreateGhost(Vector3 position)
     {
-        if(_ghost != null) ResetBlock(_ghost);
+        if(_ghost != null) _ghost.Destroy();
         _ghost = InstantiateBlock(BlockType.Ghost, position).GetComponent<Ghost>();
+    }
+    
+    private void CreateMagma(Vector3 position)
+    {
+        if(_magma != null) _magma.Destroy();
+        _magma = InstantiateBlock(BlockType.Magma, position).GetComponent<Magma>();
     }
 
     private void CreateImaginary(Vector3 position)
@@ -98,7 +111,13 @@ public class BlockController : MonoBehaviour
         if(_imaginary != null) _imaginary.Destroy();
         _imaginary = InstantiateBlock(BlockType.Imaginary, position).GetComponent<Imaginary>();
     }
-
+    
+    private void CreateMirror(Vector3 position)
+    {
+        if(_mirror != null) _mirror.Destroy();
+        _mirror = InstantiateBlock(BlockType.Mirror, position).GetComponent<Mirror>();
+    }
+    
     private void CreatePortal(Vector3 position)
     {
         Block instantiatedBlock = InstantiateBlock(BlockType.Portal, position);
@@ -134,23 +153,21 @@ public class BlockController : MonoBehaviour
             else
             {
                 //Both used, change portal1
-                ResetBlock(_portal1);
+                _portal1.ResetPair();
+                _portal1.Destroy();
+
                 _portal1 = _portal2;
                 _portal2 = portal;
                 
                 _portal1.SetPair(_portal2);
                 _portal2.SetPair(_portal1);
+                
+                
             }
         }
         
     }
-    
-    public void ResetBlock(Block block)
-    {
-        Vector3 position = block.transform.position;
-        block.Destroy();
-        InstantiateBlock(BlockType.Default,position);
-    }
+
     
 
     private Block InstantiateBlock(BlockType blockType,Vector3 position)
@@ -187,6 +204,14 @@ public class BlockController : MonoBehaviour
                 result = Instantiate(frozenPrefab, position, Quaternion.identity).GetComponent<Block>();
                 break;
             
+            case BlockType.Mirror:
+                result = Instantiate(mirrorPrefab, position, Quaternion.identity).GetComponent<Block>();
+                break;
+            
+            case BlockType.Magma:
+                result = Instantiate(magmaPrefab, position, Quaternion.identity).GetComponent<Block>();
+                break;
+            
             default:
                 return null;
         }
@@ -202,11 +227,12 @@ public class BlockController : MonoBehaviour
             Vector3 pos = _preImaginary.transform.position;
             if ((pos - normalizedPosition).magnitude < 0.1f) return;
             
-            
             _preImaginary.Destroy();
         }
         
         _preImaginary = InstantiateBlock(BlockType.PreImaginary, normalizedPosition).GetComponent<PreImaginary>();
+        
+        if(_imaginary)_imaginary.Destroy();
     }
     
     

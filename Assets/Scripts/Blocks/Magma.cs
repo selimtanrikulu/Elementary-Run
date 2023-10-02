@@ -1,20 +1,17 @@
 using System.Collections.Generic;
 
-public class Imaginary : Block
+public class Magma : Block
 {
-    public override void Destroy()
-    {
-        Destroy(gameObject);
-    }
-    
     protected override BlockConfig GetBlockConfig()
     {
-        return new BlockConfig(1, 2, 0.1f, 10f);
+        return new BlockConfig(1, 2, 0.1f, 5f);
     }
+
     protected override void AwakeTail()
     {
         //nothing to do
     }
+
     protected override void UpdateTail()
     {
         //nothing to do
@@ -29,12 +26,18 @@ public class Imaginary : Block
     {
         Destroy();
     }
-    
+
+    public override void Destroy()
+    {
+        blockController.CreateBlockByBeamType(BeamType.Creativity,transform.position);
+        Destroy(gameObject);
+    }
+
     protected override List<BeamType> GetFillerBeamTypes()
     {
         return new List<BeamType>()
         {
-            BeamType.Agony
+            BeamType.Fire
         };
     }
 

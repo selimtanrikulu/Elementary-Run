@@ -45,32 +45,76 @@ public class Hovl_Laser : MonoBehaviour
         {
             Laser.SetPosition(0, transform.position);
 
-            if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward),
-                    out RaycastHit hit, 
-                    MaxLength ,
-                    LayerMask.GetMask("Block")))
+            bool hit1Occurred = Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward),
+                out RaycastHit hit1,
+                MaxLength,
+                LayerMask.GetMask("Block"));
+
+            bool hit2Occurred = Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward),
+                out RaycastHit hit2,
+                MaxLength,
+                LayerMask.GetMask("Mirror"));
+
+            if (hit1Occurred && (!hit2Occurred || (hit1.distance < hit2.distance)))
             {
                 //End laser position if collides with object
-                Laser.SetPosition(1, hit.point);
+                Laser.SetPosition(1, hit1.point);
 
-                HitEffect.transform.position = hit.point + hit.normal * HitOffset;
+                HitEffect.transform.position = hit1.point + hit1.normal * HitOffset;
                 if (useLaserRotation)
                     HitEffect.transform.rotation = transform.rotation;
                 else
-                    HitEffect.transform.LookAt(hit.point + hit.normal);
+                    HitEffect.transform.LookAt(hit1.point + hit1.normal);
 
                 foreach (var AllPs in Effects)
                 {
                     if (!AllPs.isPlaying) AllPs.Play();
                 }
                 //Texture tiling
-                Length[0] = MainTextureLength * (Vector3.Distance(transform.position, hit.point));
-                Length[2] = NoiseTextureLength * (Vector3.Distance(transform.position, hit.point));
+                Length[0] = MainTextureLength * (Vector3.Distance(transform.position, hit1.point));
+                Length[2] = NoiseTextureLength * (Vector3.Distance(transform.position, hit1.point));
 
-                if (hit.collider.TryGetComponent(out Block block))
+                if (hit1.collider.TryGetComponent(out Block block))
                 {
                     block.Beaming(_beamType);
                 }
+
+                if (hit1.collider.TryGetComponent(out Mirror mirror))
+                {
+                    Vector3 incomingVector = hit1.point - hit1.collider.transform.position;
+                    Vector3 reflectVector = Vector3.Reflect(incomingVector, hit1.normal);
+                    
+                    mirror.OnLaserStay(_beamType,hit1.point,reflectVector);
+                }
+                
+            }
+            else if (hit2Occurred)
+            {
+                //End laser position if collides with object
+                Laser.SetPosition(1, hit2.point);
+                
+                foreach (var AllPs in Effects)
+                {
+                    if (AllPs.isPlaying) AllPs.Stop();
+                }
+                
+                //Texture tiling
+                Length[0] = MainTextureLength * (Vector3.Distance(transform.position, hit2.point));
+                Length[2] = NoiseTextureLength * (Vector3.Distance(transform.position, hit2.point));
+
+                if (hit2.collider.TryGetComponent(out Block block))
+                {
+                    block.Beaming(_beamType);
+                }
+
+                if (hit2.collider.TryGetComponent(out Mirror mirror))
+                {
+                    Vector3 incomingVector = transform.forward;
+                    Vector3 reflectVector = Vector3.Reflect(incomingVector, hit2.normal);
+                    
+                    mirror.OnLaserStay(_beamType,hit2.point,reflectVector);
+                }
+                
             }
             else
             {
@@ -92,8 +136,8 @@ public class Hovl_Laser : MonoBehaviour
                     if (!AllPs.isPlaying) AllPs.Play();
                 }
                 //Texture tiling
-                Length[0] = MainTextureLength * (Vector3.Distance(transform.position, hit.point));
-                Length[2] = NoiseTextureLength * (Vector3.Distance(transform.position, hit.point));
+                Length[0] = MainTextureLength * (Vector3.Distance(transform.position, hit1.point));
+                Length[2] = NoiseTextureLength * (Vector3.Distance(transform.position, hit1.point));
 
 
                 if (_beamType == BeamType.Agony)

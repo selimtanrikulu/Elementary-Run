@@ -3,44 +3,65 @@ using UnityEngine;
 
 public class Frozen : Block
 {
-    [SerializeField] private float pullBackDelay;
-    private float _pullBackDelayCounter;
-
     private PlayerControl _pullingPlayer;
-
     private Vector3 _pullBackPosition;
-    
-    protected override List<BeamType> GetIgnoringBeamTypes()
+
+    protected override BlockConfig GetBlockConfig()
     {
-        return new List<BeamType>() { BeamType.Frost };
+        return new BlockConfig(1, 2, 0.1f, 7f);
+    }
+    protected override void AwakeTail()
+    {
+        //nothing to do
+    }
+    protected override void UpdateTail()
+    {
+        //nothing to do
     }
 
-    protected override void Update()
+    protected override void OnFilled()
     {
-        base.Update();
-
-        if(_pullingPlayer == null)return;
-        
-        if (_pullBackDelayCounter < 0)
+        //nothing to do
+    }
+    
+    protected override void OnRefilled()
+    {
+        if (_pullingPlayer != null)
         {
             _pullingPlayer.TeleportToPosition(_pullBackPosition);
-            _pullingPlayer = null;
-            
-            blockController.ResetBlock(this);
         }
-        else
-        {
-            _pullBackDelayCounter -= Time.deltaTime;
-        }
+        
+        Destroy();
     }
 
+    public override void Destroy()
+    {
+        blockController.CreateBlockByBeamType(BeamType.Creativity,transform.position);
+        Destroy(gameObject);
+    }
+
+    protected override List<BeamType> GetFillerBeamTypes()
+    {
+        return new List<BeamType>()
+        {
+            BeamType.Frost
+        };
+    }
+
+    protected override List<BeamType> GetReFillerBeamTypes()
+    {
+        return new List<BeamType>()
+        {
+            BeamType.Creativity
+        };
+    }
+    
     private void OnTriggerExit(Collider other)
     {
         if (other.TryGetComponent(out PlayerControl playerControl))
         {
             _pullingPlayer = playerControl;
             _pullBackPosition = _pullingPlayer.transform.position;
-            _pullBackDelayCounter = pullBackDelay;
         }        
     }
 }

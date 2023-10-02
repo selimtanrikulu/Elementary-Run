@@ -4,14 +4,14 @@ using UnityEngine;
 
 public enum BeamType
 {
-    Fire = 0,
-    Void = 1,
-    Frost = 2, 
-    Lighting = 3, 
-    Nature = 4,
-    Agony = 5,
-    Soul = 6,
-    Creativity = 7,
+    Fire,
+    Void,
+    Frost, 
+    Lighting, 
+    Nature,
+    Agony,
+    Soul,
+    Creativity,
 }
 
 [Serializable]
@@ -21,19 +21,26 @@ public struct BeamPrefab
     public GameObject prefab;
 }
 
+[Serializable]
+public struct BeamKeyMap
+{
+    public BeamType beamType;
+    public KeyCode keyCode;
+}
+
 public class BeamController : MonoBehaviour
 {
     [SerializeField] private List<BeamPrefab> beamPrefabs = new List<BeamPrefab>();
     private readonly Dictionary<BeamType, GameObject> _beamDictionary = new Dictionary<BeamType, GameObject>();
-
-    private int _beamTypeCount;
+    
     private BeamType _selectedBeamType;
     private GameObject _activeBeam;
     private PlayerControl _playerControl;
     private Camera _camera;
-    
-    
-    
+
+    [SerializeField] private List<BeamKeyMap> beamKeyMaps;
+
+
     void Start()
     {
         _camera = Camera.main;
@@ -43,13 +50,18 @@ public class BeamController : MonoBehaviour
         {
             _beamDictionary.Add(beamPrefab.beamType,beamPrefab.prefab);
         }
-
-        _beamTypeCount = Enum.GetValues(typeof(BeamType)).Length;
     }
 
-    private GameObject GetBeamPrefab()
+    private void SelectBeamType(BeamType beamType)
     {
-        if (_beamDictionary.TryGetValue(_selectedBeamType, out GameObject prefab))
+        _selectedBeamType = beamType;
+
+        if(_activeBeam != null)InstantiateBeam();
+    }
+    
+    public GameObject GetBeamPrefab(BeamType beamType)
+    {
+        if (_beamDictionary.TryGetValue(beamType, out GameObject prefab))
         {
             return prefab;
         }
@@ -62,18 +74,19 @@ public class BeamController : MonoBehaviour
 
         if (_activeBeam != null)
         {
-            _activeBeam.transform.position = transform.position;
+            Vector3 pos = transform.position;
+            pos.z = 0;
+            
+            _activeBeam.transform.position = pos;
             Vector3 mousePosition = _camera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y,-_camera.transform.position.z));
-            Vector3 dir = (mousePosition - transform.position);
+            Vector3 dir = (mousePosition - pos);
             float dist = dir.magnitude;
             dir.Normalize();
             _activeBeam.transform.forward = dir;
             
-            if (_selectedBeamType == BeamType.Agony)
-            {
-                Hovl_Laser laser = _activeBeam.GetComponent<Hovl_Laser>();
-                laser.SetMaxLength(dist);
-            }
+
+            Hovl_Laser laser = _activeBeam.GetComponent<Hovl_Laser>();
+            laser.SetMaxLength(dist);
         }
         
         if (_playerControl.beamInput > 0.1f)
@@ -87,15 +100,18 @@ public class BeamController : MonoBehaviour
         {
             DestroyActiveBeam();
         }
-
-        if (_playerControl.changeBeamInput > 0)
+        
+        
+        
+        //Checking inputs
+        foreach (BeamKeyMap beamKeyMap in beamKeyMaps)
         {
-            SelectNextBeam();
+            if (Input.GetKeyDown(beamKeyMap.keyCode))
+            {
+                SelectBeamType(beamKeyMap.beamType);
+            }
         }
-        else if (_playerControl.changeBeamInput < 0)
-        {
-            SelectPreviousBeam();
-        }
+        
     }
 
     private void DestroyActiveBeam()
@@ -110,29 +126,7 @@ public class BeamController : MonoBehaviour
     private void InstantiateBeam()
     {
         DestroyActiveBeam();
-        _activeBeam = Instantiate(GetBeamPrefab(), transform.position, Quaternion.identity);
+        _activeBeam = Instantiate(GetBeamPrefab(_selectedBeamType), transform.position, Quaternion.identity);
         _activeBeam.GetComponent<Hovl_Laser>().SetBeamType(_selectedBeamType);
     }
-
-    void SelectNextBeam()
-    {
-        int currentBeamIndex = (int)_selectedBeamType;
-        if (currentBeamIndex < _beamTypeCount-1) currentBeamIndex++;
-        else currentBeamIndex = 0;
-        _selectedBeamType = (BeamType)currentBeamIndex;
-        
-        if(_activeBeam != null)InstantiateBeam();
-    }
-
-    void SelectPreviousBeam()
-    {
-        int currentBeamIndex = (int)_selectedBeamType;
-        if (currentBeamIndex > 0) currentBeamIndex--;
-        else currentBeamIndex = _beamTypeCount-1;
-        _selectedBeamType = (BeamType)currentBeamIndex;
-        
-        if(_activeBeam != null)InstantiateBeam();
-    }
-    
-    
 }

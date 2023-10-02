@@ -2,36 +2,48 @@ using System.Collections.Generic;
 
 public class PreImaginary : Block
 {
-    protected override void Start()
+    protected override BlockConfig GetBlockConfig()
     {
-        base.Start();
-
-        DelayBeforeRefill = 0.01f;
-        RefillTime = 0.01f;
+        return new BlockConfig(0, 1, 0.1f, 0.1f);
+    }
+    protected override void AwakeTail()
+    {
+        //nothing to do
+    }
+    protected override void UpdateTail()
+    {
+        //nothing to do
     }
 
-    protected override void Update()
+    protected override void OnFilled()
     {
-        base.Update();
-
-
-        if (fillAmount <= 0)
-        {
-            Destroy();
-        }
+        blockController.CreateBlockByBeamType(BeamType.Agony,transform.position);
+        Destroy();
     }
 
-    protected override List<BeamType> GetIgnoringBeamTypes()
+    protected override void OnRefilled()
+    {
+        Destroy();
+    }
+
+    public override void Destroy()
+    {
+        Destroy(gameObject);
+    }
+
+    protected override List<BeamType> GetFillerBeamTypes()
     {
         return new List<BeamType>()
         {
-            BeamType.Nature,
-            BeamType.Creativity,
-            BeamType.Fire,
-            BeamType.Frost,
-            BeamType.Lighting,
-            BeamType.Void,
-            BeamType.Soul,
+            BeamType.Agony
+        };
+    }
+
+    protected override List<BeamType> GetReFillerBeamTypes()
+    {
+        return new List<BeamType>()
+        {
+            BeamType.Creativity
         };
     }
 }

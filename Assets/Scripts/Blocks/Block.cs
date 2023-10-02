@@ -1,91 +1,121 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
+
+public class BlockConfig
+{
+    public readonly float StartFill;
+    public readonly float FillTime;
+    public readonly float DelayBeforeRefill;
+    public readonly float RefillTime;
+    
+    public BlockConfig(float startFill, float fillTime, float delayBeforeRefill, float refillTime)
+    {
+        StartFill = startFill;
+        FillTime = fillTime;
+        DelayBeforeRefill = delayBeforeRefill;
+        RefillTime = refillTime;
+    }
+}
+
 public abstract class Block : MonoBehaviour
 {
-    protected float DelayBeforeRefill = 1f;
-    protected float RefillTime = 4f;
-    private const float FillTime = 0.5f;
+    private float _delayBeforeRefill;
+    private float _refillTime;
+    private float _fillTime;
     private float _delayBeforeRefillCounter;
+    private float _fillAmount;
     private FillBar _fillBar;
-    private BeamType _lastBeamingBeamType;
-    protected float fillAmount;
+    
     protected BlockController blockController;
-
-    protected virtual void Start()
+    protected BeamType lastBeamingBeamType;
+    
+    private void Awake()
     {
         blockController = FindObjectOfType<BlockController>();
         _fillBar = GetComponentInChildren<FillBar>(includeInactive:true);
+        _delayBeforeRefillCounter = _delayBeforeRefill;
 
-        _delayBeforeRefillCounter = DelayBeforeRefill;
+        BlockConfig blockConfig = GetBlockConfig();
+
+        _delayBeforeRefill = blockConfig.DelayBeforeRefill;
+        _refillTime = blockConfig.RefillTime;
+        _fillTime = blockConfig.FillTime;
+        _fillAmount = blockConfig.StartFill;
+        _fillBar.gameObject.SetActive(_fillAmount>0.001f);
+        _fillBar.UpdateFill(_fillAmount);
+
+        AwakeTail();
     }
-
-    protected virtual void Update()
+    private void Update()
     {
         if (_delayBeforeRefillCounter < 0)
         {
-            UpdateFillAmount(-Time.deltaTime*(1/RefillTime));
+            Refill(Time.deltaTime*(1/_refillTime));
         }
         else
         {
             _delayBeforeRefillCounter -= Time.deltaTime;
         }
+
+        UpdateTail();
     }
-    
-
-    //Call is on Update
-    public void Beaming(BeamType beamType)
-    {
-        if(GetIgnoringBeamTypes().Contains(beamType))return;
-        
-        if (_lastBeamingBeamType != beamType)
-        {
-            fillAmount = 0;
-        }
-        
-        _lastBeamingBeamType = beamType;
-        _delayBeforeRefillCounter = DelayBeforeRefill;
-        
-        UpdateFillAmount(Time.deltaTime * (1/FillTime));
-    }
-
-    protected abstract List<BeamType> GetIgnoringBeamTypes();
-
-    public virtual void Destroy()
+    private void OnDestroy()
     {
         _fillBar.fillGameObject.transform.DOKill();
-        Destroy(gameObject);
     }
-
-
-    protected void UpdateFillAmount(float amount)
+    public void Beaming(BeamType beamType)
     {
-        float tempAmount = fillAmount += amount;
-        if (tempAmount < 0) tempAmount = 0;
-        else if (tempAmount > 1) tempAmount = 1;
+        if (GetFillerBeamTypes().Contains(beamType))
+        {
+            lastBeamingBeamType = beamType;
+            Fill(Time.deltaTime * (1/_fillTime));
+            return;
+        } 
+        if (GetReFillerBeamTypes().Contains(beamType))
+        {
+            lastBeamingBeamType = beamType;
+            float refillerSpeed = 1;
+            Refill(Time.deltaTime*(1/refillerSpeed));
+        }
+    }
+    private void Fill(float amount)
+    {
+        _fillAmount = Mathf.Min(1, _fillAmount + amount);
+        _fillBar.UpdateFill(_fillAmount);
+        _fillBar.gameObject.SetActive(true);
+        _delayBeforeRefillCounter = _delayBeforeRefill;
 
-
-        fillAmount = tempAmount;
-        _fillBar.UpdateFill(fillAmount);
-
-
-        if (fillAmount >= 0.999f)
+        if (_fillAmount >= 0.9999f)
         {
             OnFilled();
-            fillAmount = 0;
         }
-
-
-        _fillBar.gameObject.SetActive(fillAmount > 0);
-        
     }
-
-
-
-    protected virtual void OnFilled()
+    private void Refill(float amount)
     {
-        blockController.OnBlockFilled(this,_lastBeamingBeamType);
-    }
+        _fillAmount = Mathf.Max(0, _fillAmount - amount);
+        _fillBar.UpdateFill(_fillAmount);
 
+        if (_fillAmount <= 0.0001f)
+        {
+            _fillBar.gameObject.SetActive(false);
+            OnRefilled();
+        }
+    }
+    protected void ResetFillAmount()
+    {
+        _fillAmount = GetBlockConfig().StartFill;
+        _fillBar.gameObject.SetActive(_fillAmount>0.001f);
+        _fillBar.UpdateFill(_fillAmount);
+    }
+    protected abstract BlockConfig GetBlockConfig();
+    protected abstract void AwakeTail();
+    protected abstract void UpdateTail();
+    protected abstract void OnFilled();
+    protected abstract void OnRefilled();
+    public abstract void Destroy();
+    protected abstract List<BeamType> GetFillerBeamTypes();
+    protected abstract List<BeamType> GetReFillerBeamTypes();
 }
